@@ -33,6 +33,7 @@ func New(questions []string) *model {
 	styles := DefaultStyles()
 	answerField := textinput.New()
 	answerField.Placeholder = "Your answer here"
+	answerField.Focus()
 	return &model{
 		questions:   questions,
 		answerField: answerField,
@@ -45,6 +46,8 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -53,9 +56,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
+		case "enter":
+			if m.index < len(m.questions)-1 {
+				m.index++
+				m.answerField.SetValue("Done!")
+			}
+			return m, nil
 		}
+
 	}
-	return m, nil
+	m.answerField, cmd = m.answerField.Update(msg)
+	return m, cmd
 }
 
 func (m model) View() string {
