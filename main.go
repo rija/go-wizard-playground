@@ -77,8 +77,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c":
+		case tea.KeyCtrlC.String():
 			return m, tea.Quit
+		case tea.KeyShiftTab.String():
+			m.Previous()
 		case tea.KeyTab.String():
 			if m.index == len(m.questions)-1 {
 				m.done = true
@@ -125,6 +127,7 @@ func (m model) View() string {
 			lipgloss.Center,
 			current.question,
 			m.styles.InputField.Render(current.input.View()),
+			"(ctrl+c to quit)",
 		),
 	)
 
@@ -133,6 +136,14 @@ func (m model) View() string {
 func (m *model) Next() {
 	if m.index < len(m.questions)-1 {
 		m.index++
+	} else {
+		m.index = 0
+	}
+}
+
+func (m *model) Previous() {
+	if m.index > 0 {
+		m.index--
 	} else {
 		m.index = 0
 	}
