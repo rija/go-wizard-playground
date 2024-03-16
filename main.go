@@ -1,51 +1,57 @@
 package main
 
-// TODO: 30mn44s
 
 import (
+	"fmt"
 	"log"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 )
 
+const spinner = "Loading..."
+const quitToolTip = "(ctrl+c to quit)"
+
 type Styles struct {
-	BorderColor lipgloss.Color
-	InputField  lipgloss.Style
+	BorderColor    lipgloss.Color
+	InputField     lipgloss.Style
+	headerRowStyle lipgloss.Style
+	baseRowStyle   lipgloss.Style
 }
 
 func DefaultStyles() *Styles {
 	s := new(Styles)
 	s.BorderColor = lipgloss.Color("36")
 	s.InputField = lipgloss.NewStyle().BorderForeground(s.BorderColor).BorderStyle(lipgloss.NormalBorder()).Padding(1).Width(80)
+	s.baseRowStyle = lipgloss.NewStyle().Padding(0, 1)
+	s.headerRowStyle = s.baseRowStyle.Copy().Foreground(lipgloss.Color("252")).Bold(true)
 	return s
 }
 
 type model struct {
-	index       int
-	questions   []Question
-	width       int
-	height      int
-	styles      *Styles
-	done		bool
+	index     int
+	questions []Question
+	width     int
+	height    int
+	styles    *Styles
+	done      bool
 }
 
 type Question struct {
 	question string
-	answer string
-	input Input
+	answer   string
+	input    Input
 }
 
-
 func NewQuestion(question string) Question {
-	return Question{ question: question}
+	return Question{question: question}
 }
 
 func NewShortQuestion(question string) Question {
 	q := Question{question: question}
 	q.input = NewShortAnswerField()
-	return q	
+	return q
 }
 
 func NewLongQuestion(question string) Question {
@@ -58,8 +64,8 @@ func New(questions []Question) *model {
 	styles := DefaultStyles()
 
 	return &model{
-		questions:   questions,
-		styles:      styles,
+		questions: questions,
+		styles:    styles,
 	}
 }
 
@@ -87,13 +93,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			current.answer = current.input.Value()
 			current.input.Blur()
-
-			log.Printf("question: %s, answer: %s", current.question, current.answer)
 			m.Next()
 
 			return m, nil
 		}
-		
 
 	}
 	current.input, cmd = current.input.Update(msg)
@@ -101,19 +104,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	output := strings.Builder{}
 
 	if m.width == 0 {
-		return "Loading..."
+		return spinner
 	}
 
 	if m.done == true {
-		for _, q := range m.questions {
-			output.WriteString(q.question)
-			output.WriteString(q.answer)
-			output.WriteString("\n")
-		}
-		return output.String()
+		return lipgloss.Place(
+			m.width,
+			m.height,
+			lipgloss.Center,
+			lipgloss.Center,
+			lipgloss.JoinVertical(
+				lipgloss.Center,
+				m.Result().String(),
+				quitToolTip,
+			),
+		)
 	}
 
 	current := &m.questions[m.index]
@@ -127,10 +134,43 @@ func (m model) View() string {
 			lipgloss.Center,
 			current.question,
 			m.styles.InputField.Render(current.input.View()),
-			"(ctrl+c to quit)",
+			quitToolTip,
 		),
 	)
 
+}
+
+func (m *model) Result() *table.Table {
+	var rows [][]string
+
+	headers := []string{"#", "Q", "A"}
+	for i, q := range m.questions {
+		log.Println(i)
+		rows = append(rows, []string{
+			fmt.Sprintf("%d",i),
+			q.question,
+			q.answer,
+		})
+	}
+	t := table.New().
+		Border(lipgloss.NormalBorder()).
+		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("238"))).
+		Headers(headers...).
+		Width(80).
+		Rows(rows...).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if row == 0 {
+				return m.styles.headerRowStyle
+			}
+
+			even := row%2 == 0
+
+			if even {
+				return m.styles.baseRowStyle.Copy().Foreground(lipgloss.Color("245"))
+			}
+			return m.styles.baseRowStyle.Copy().Foreground(lipgloss.Color("252"))
+		})
+	return t
 }
 
 func (m *model) Next() {
