@@ -4,6 +4,7 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -27,6 +28,7 @@ type model struct {
 	width       int
 	height      int
 	styles      *Styles
+	done		bool
 }
 
 type Question struct {
@@ -77,7 +79,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
-		case "enter":
+		case tea.KeyTab.String():
+			if m.index == len(m.questions)-1 {
+				m.done = true
+			}
 			current.answer = current.input.Value()
 			current.input.Blur()
 
@@ -94,9 +99,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	output := strings.Builder{}
+
 	if m.width == 0 {
 		return "Loading..."
 	}
+
+	if m.done == true {
+		for _, q := range m.questions {
+			output.WriteString(q.question)
+			output.WriteString(q.answer)
+			output.WriteString("\n")
+		}
+		return output.String()
+	}
+
 	current := &m.questions[m.index]
 	current.input.Focus()
 	return lipgloss.Place(
