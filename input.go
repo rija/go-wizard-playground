@@ -1,20 +1,18 @@
 package main
 
 import (
-
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type Input interface{
+type Input interface {
 	Value() string
 	Update(msg tea.Msg) (Input, tea.Cmd)
-	Blur()
+	Blur() tea.Msg
 	View() string
 	Focus() tea.Cmd
 }
-
 
 // ShortAnswer
 
@@ -34,8 +32,8 @@ func (sa *ShortAnswerField) Value() string {
 	return sa.textinput.Value()
 }
 
-func (sa *ShortAnswerField) Blur() {
-	sa.textinput.Blur()
+func (sa *ShortAnswerField) Blur() tea.Msg {
+	return sa.textinput.Blur
 }
 
 func (sa *ShortAnswerField) Focus() tea.Cmd {
@@ -48,18 +46,16 @@ func (sa *ShortAnswerField) View() string {
 
 func (sa *ShortAnswerField) Update(msg tea.Msg) (Input, tea.Cmd) {
 	var cmd tea.Cmd
-	sa.textinput, cmd = sa.textinput.Update(msg) 
+	sa.textinput, cmd = sa.textinput.Update(msg)
 
 	return sa, cmd
 }
-
 
 // LongAnswer
 
 type LongAnswerField struct {
 	textarea textarea.Model
 }
-
 
 func NewLongAnswerField() *LongAnswerField {
 	ta := textarea.New()
@@ -73,8 +69,8 @@ func (la *LongAnswerField) Value() string {
 	return la.textarea.Value()
 }
 
-func (la *LongAnswerField) Blur() {
-	la.textarea.Blur()
+func (la *LongAnswerField) Blur() tea.Msg {
+	return la.textarea.Blur
 }
 
 func (la *LongAnswerField) Focus() tea.Cmd {

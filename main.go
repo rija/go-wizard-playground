@@ -92,10 +92,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.done = true
 			}
 			current.answer = current.input.Value()
-			current.input.Blur()
 			m.Next()
 
-			return m, nil
+			return m, current.input.Blur
 		}
 
 	}
